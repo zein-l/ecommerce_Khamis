@@ -1,23 +1,55 @@
-from customers.app.app import app 
+from flask import Blueprint, request, jsonify
+from werkzeug.security import generate_password_hash
+from .models import db, Customer
+from .validators import CustomerSchema
+from .auth import token_required
+from marshmallow import ValidationError
+from customers.app.db import db 
+from customers.app.models import Customer
 
-@app.route('/customers/register', methods=['POST'])
+
+
+
+customers_bp = Blueprint('customers_bp', __name__)
+
+@customers_bp.route('/customers/register', methods=['POST'])
 def register_customer():
-    """
-    Register a new customer.
+    data = request.get_json()
+    schema = CustomerSchema()
+    try:
+        validated_data = schema.load(data)
+    except ValidationError as err:
+        return jsonify({"error": "Invalid input data.", "details": err.messages}), 400
 
-    **Endpoint**: `POST /customers/register`
+    if Customer.query.filter_by(username=validated_data['username']).first():
+        return jsonify({"error": f"Username '{validated_data['username']}' is already taken."}), 400
 
-    **Request Body**:
-    - `full_name` (str): Full name of the customer.
-    - `username` (str): Unique username.
-    - `password` (str): Account password.
-    - `age` (int): Age of the customer.
-    - `address` (str): Address of the customer.
-    - `gender` (str, optional): Gender of the customer.
-    - `marital_status` (str, optional): Marital status.
+    hashed_password = generate_password_hash(validated_data['password'])
+    new_customer = Customer(
+        full_name=validated_data['full_name'],
+        username=validated_data['username'],
+        password_hash=hashed_password,
+        age=validated_data['age'],
+        address=validated_data['address'],
+        gender=validated_data.get('gender'),
+        marital_status=validated_data.get('marital_status')
+    )
 
-    **Responses**:
-    - `201 Created`: Customer registered successfully.
-    - `400 Bad Request`: Validation errors or username already taken.
-    """
-    # Implementation
+    db.session.add(new_customer)
+    db.session.commit()
+
+    return jsonify({"message": "Customer registered successfully.", "customer_id": new_customer.id}), 201
+
+
+@customers_bp.route('/customers/<username>', methods=['DELETE'])
+def delete_customer(username):
+    
+    customer = Customer.query.filter_by(username=username).first()
+    if not customer:
+        return jsonify({"error": f"Customer with username '{username}' not found."}), 404
+
+    db.session.delete(customer)
+    db.session.commit()
+
+    return jsonify({"message": f"Customer '{username}' deleted successfully."}), 200
+  

@@ -1,0 +1,32 @@
+version: "3.8"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: ecommerce-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: ecommerce_db
+      MYSQL_USER: ecommerce_user
+      MYSQL_PASSWORD: securepassword
+    ports:
+      - "3307:3306"
+
+  customers-service:
+    build:
+      context: .
+      dockerfile: ./customers/Dockerfile
+    depends_on:
+      - mysql
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ecommerce_db
+      DB_USER: ecommerce_user
+      DB_PASSWORD: securepassword
+    ports:
+      - "5001:5000"
+    command: >
+      sh -c "while ! nc -z mysql 3306; do
+      echo 'Waiting for MySQL...'; sleep 3; done;
+      python app.py"

@@ -1,11 +1,15 @@
-from flask import Flask
+import sys
+import os
+from customers.app import create_app
+from customers.app.db import db
+# Ensure the parent directory is included in the path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-app = Flask(__name__)
+app = create_app()
 
-@app.route("/")
-def index():
-    return "Welcome to the Ecommerce API"
-
-# Ensure this is only executed when running the app directly
-if __name__ == "__main__":
-    app.run(debug=True)
+if __name__ == '__main__':
+    # Create the database tables within the app context
+    with app.app_context():
+        db.create_all()
+    # Run the app
+    app.run(host='0.0.0.0', port=5000)
