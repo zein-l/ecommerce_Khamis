@@ -6,4 +6,5 @@ PyJWT
 Werkzeug
 pytest
 cryptography
+flask-profiler==2.0.4
 

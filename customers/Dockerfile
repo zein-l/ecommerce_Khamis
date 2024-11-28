@@ -5,7 +5,7 @@ FROM python:3.9-slim
 WORKDIR /app
 
 # Install netcat-openbsd for checking database readiness
-RUN apt-get update && apt-get install -y netcat-openbsd
+RUN apt-get update && apt-get install -y netcat-openbsd sqlite3
 
 # Copy requirements file into the container
 COPY customers/requirements.txt .
