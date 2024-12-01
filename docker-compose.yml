@@ -18,18 +18,50 @@ services:
       dockerfile: ./customers/Dockerfile
     depends_on:
       - mysql
-    environment:
-      FLASK_ENV: development
-      DB_HOST: mysql
-      DB_PORT: 3306
-      DB_NAME: ecommerce_db
-      DB_USER: ecommerce_user
-      DB_PASSWORD: securepassword
+    env_file:
+      - ./customers/.env
     ports:
       - "5001:5000"
     volumes:
-      - ./data:/data 
+      - ./customers:/app/customers
+      - ./shared:/app/shared
     command: >
       sh -c "while ! nc -z mysql 3306; do
       echo 'Waiting for MySQL...'; sleep 3; done;
       python app.py"
+
+  inventory-service:
+    build:
+      context: .
+      dockerfile: ./inventory/Dockerfile
+    depends_on:
+      - mysql
+    env_file:
+      - ./inventory/.env
+    ports:
+      - "5002:5002"
+    volumes:
+      - ./inventory:/app/inventory
+      - ./shared:/app/shared
+    command: >
+      sh -c "while ! nc -z mysql 3306; do
+      echo 'Waiting for MySQL...'; sleep 3; done;
+      python app/run.py"
+
+  sales-service:
+    build:
+      context: .
+      dockerfile: ./sales/Dockerfile
+    depends_on:
+      - mysql
+    env_file:
+      - ./sales/.env
+    ports:
+      - "5003:5003"
+    volumes:
+      - ./sales:/app/sales
+      - ./shared:/app/shared
+    command: >
+      sh -c "while ! nc -z mysql 3306; do
+      echo 'Waiting for MySQL...'; sleep 3; done;
+      python app/run.py"

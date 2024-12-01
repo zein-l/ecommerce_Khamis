@@ -4,9 +4,13 @@ from shared.config import Config
 from customers.app.db import db
 import flask_profiler
 
-def create_app():
+def create_app(config=None):
     app = Flask(__name__)
     app.config.from_object(Config) 
+    if config:
+        app.config.update(config)
+    
+    print(f"Using database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
     db.init_app(app)
 
     # Register your blueprints
