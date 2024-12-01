@@ -87,6 +87,7 @@ class InventoryServiceUser(HttpUser):
 class SalesServiceUser(HttpUser):
     wait_time = between(1, 3)  # Simulate a wait time between tasks
     host = "http://127.0.0.1:5003"
+
     @task
     def create_sale(self):
         """Simulate creating a sale."""
@@ -106,3 +107,46 @@ class SalesServiceUser(HttpUser):
     def get_sale_by_id(self):
         """Simulate retrieving a specific sale by ID."""
         self.client.get("/sales/1")
+
+
+class ReviewsServiceUser(HttpUser):
+    wait_time = between(1, 2)  # Simulate a wait time between tasks
+    host = "http://127.0.0.1:5004"
+
+    @task
+    def create_review(self):
+        """Simulate creating a review."""
+        self.client.post("/reviews/", json={
+            "product_id": 1,
+            "customer_id": 2,
+            "rating": 5,
+            "comment": "Amazing product!"
+        })
+
+    @task
+    def get_review_by_id(self):
+        """Simulate retrieving a specific review by ID."""
+        self.client.get("/reviews/1")
+
+    @task
+    def get_reviews_by_product(self):
+        """Simulate retrieving all reviews for a product."""
+        self.client.get("/reviews/product/1")
+
+    @task
+    def get_reviews_by_customer(self):
+        """Simulate retrieving all reviews for a customer."""
+        self.client.get("/reviews/customer/2")
+
+    @task
+    def update_review(self):
+        """Simulate updating a review."""
+        self.client.put("/reviews/1", json={
+            "rating": 4,
+            "comment": "Updated review comment."
+        })
+
+    @task
+    def delete_review(self):
+        """Simulate deleting a review."""
+        self.client.delete("/reviews/1")

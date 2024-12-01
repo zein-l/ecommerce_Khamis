@@ -1,9 +1,26 @@
 from flask import Blueprint, request, jsonify
+from sqlalchemy.exc import SQLAlchemyError
 from sales.app.db import db
 from .models import Sale  # Replace with your actual model for sales
 
 # Create a Blueprint for the sales service
 sales_bp = Blueprint('sales_bp', __name__)
+
+@sales_bp.route('/health', methods=['GET'])
+def health_check():
+    """
+    Health Check API.
+
+    Returns:
+        Response: JSON object indicating the health status of the service.
+    """
+    try:
+        # Perform a simple database query to verify connectivity
+        db.session.execute('SELECT 1')
+        return jsonify({"status": "healthy"}), 200
+    except SQLAlchemyError as e:
+        return jsonify({"status": "unhealthy", "error": str(e)}), 500
+
 
 @sales_bp.route('/sales', methods=['POST'])
 def create_sale():

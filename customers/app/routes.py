@@ -6,30 +6,22 @@ from .auth import token_required
 from marshmallow import ValidationError
 from memory_profiler import profile
 
-
-
 customers_bp = Blueprint('customers_bp', __name__)
+
+@customers_bp.route('/health', methods=['GET'])
+def health_check():
+    """
+    Health check endpoint for the customers service.
+    
+    Returns:
+        - 200: Indicates that the service is up and running.
+    """
+    return jsonify({"status": "UP", "message": "Customers service is healthy"}), 200
 
 @customers_bp.route('/customers/register', methods=['POST'])
 def register_customer():
     """
     Registers a new customer.
-
-    Validates customer data using Marshmallow schema and checks if the username is unique.
-    Hashes the password before saving it to the database.
-
-    Request Body (JSON):
-        - full_name (str): Customer's full name (required).
-        - username (str): Unique username (required).
-        - password (str): Plaintext password (required).
-        - age (int): Customer's age (required).
-        - address (str): Customer's address (required).
-        - gender (str): Customer's gender (optional).
-        - marital_status (str): Customer's marital status (optional).
-
-    Returns:
-        - 201: Success message and the new customer's ID.
-        - 400: Validation errors or if the username is already taken.
     """
     data = request.get_json()
     schema = CustomerSchema()
@@ -62,13 +54,6 @@ def register_customer():
 def delete_customer(username):
     """
     Deletes a customer by their username.
-
-    Parameters:
-        - username (str): The username of the customer to be deleted.
-
-    Returns:
-        - 200: Success message if the customer was deleted.
-        - 404: Error message if the customer was not found.
     """
     customer = Customer.query.filter_by(username=username).first()
     if not customer:
@@ -84,16 +69,6 @@ def delete_customer(username):
 def update_customer(username):
     """
     Updates customer information.
-
-    Parameters:
-        - username (str): The username of the customer to be updated.
-
-    Request Body (JSON):
-        - Any fields to be updated (e.g., full_name, password, age, address, gender, marital_status).
-
-    Returns:
-        - 200: Success message if the update was successful.
-        - 404: Error message if the customer was not found.
     """
     data = request.get_json()
     customer = Customer.query.filter_by(username=username).first()
@@ -121,13 +96,6 @@ def update_customer(username):
 def get_customer_by_username(username):
     """
     Retrieves a customer's details by username.
-
-    Parameters:
-        - username (str): The username of the customer to retrieve.
-
-    Returns:
-        - 200: Customer details if found.
-        - 404: Error message if the customer was not found.
     """
     customer = Customer.query.filter_by(username=username).first()
     if not customer:
@@ -151,9 +119,6 @@ def get_customer_by_username(username):
 def get_all_customers():
     """
     Retrieves all customers from the database.
-
-    Returns:
-        - 200: A list of all customers with their details.
     """
     customers = Customer.query.all()
     result = [
@@ -177,17 +142,6 @@ def get_all_customers():
 def charge_wallet(username):
     """
     Charges a customer's wallet with a specified amount.
-
-    Parameters:
-        - username (str): The username of the customer to charge.
-
-    Request Body (JSON):
-        - amount (float): The amount to add to the wallet.
-
-    Returns:
-        - 200: Success message with the new wallet balance.
-        - 400: Error message if the amount is invalid.
-        - 404: Error message if the customer was not found.
     """
     data = request.get_json()
     amount = data.get("amount")
@@ -213,17 +167,6 @@ def charge_wallet(username):
 def deduct_wallet(username):
     """
     Deducts a specified amount from a customer's wallet.
-
-    Parameters:
-        - username (str): The username of the customer to deduct from.
-
-    Request Body (JSON):
-        - amount (float): The amount to deduct from the wallet.
-
-    Returns:
-        - 200: Success message with the new wallet balance.
-        - 400: Error message if the amount is invalid or insufficient balance.
-        - 404: Error message if the customer was not found.
     """
     data = request.get_json()
     amount = data.get("amount")

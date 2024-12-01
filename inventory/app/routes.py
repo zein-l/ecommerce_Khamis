@@ -1,9 +1,27 @@
 from flask import Blueprint, request, jsonify
+from sqlalchemy.exc import SQLAlchemyError
 from .db import db
 from .models import Product
 
 # Blueprint for inventory service
 inventory_bp = Blueprint('inventory', __name__)
+
+# Health Check Endpoint
+@inventory_bp.route('/health', methods=['GET'])
+def health_check():
+    """
+    Health check endpoint to verify the service is up and running.
+    
+    Returns:
+        Response: JSON object indicating the health status of the service.
+    """
+    try:
+        # Perform a simple query to verify database connectivity
+        db.session.execute("SELECT 1")
+        return jsonify({'status': 'healthy'}), 200
+    except SQLAlchemyError as e:
+        return jsonify({'status': 'unhealthy', 'error': str(e)}), 500
+
 
 @inventory_bp.route('/products', methods=['POST'])
 def create_product():

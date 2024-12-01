@@ -65,3 +65,21 @@ services:
       sh -c "while ! nc -z mysql 3306; do
       echo 'Waiting for MySQL...'; sleep 3; done;
       python app/run.py"
+
+  reviews-service:
+    build:
+      context: .
+      dockerfile: ./reviews/Dockerfile
+    depends_on:
+      - mysql
+    env_file:
+      - ./reviews/.env
+    ports:
+      - "5004:5004"
+    volumes:
+      - ./reviews:/app/reviews
+      - ./shared:/app/shared
+    command: >
+      sh -c "while ! nc -z mysql 3306; do
+      echo 'Waiting for MySQL...'; sleep 3; done;
+      python app/run.py"
