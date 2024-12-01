@@ -1,126 +1,137 @@
+import cProfile
+from pstats import Stats
 from memory_profiler import profile
 from customers.app import create_app as create_customers_app
+from customers.app.db import db as customers_db
 from inventory.app import create_app as create_inventory_app
+from inventory.app.db import db as inventory_db
+from sales.app import create_app as create_sales_app
+from sales.app.db import db as sales_db
 
-# Create app instances for both services
-customer_app = create_customers_app()
-inventory_app = create_inventory_app()
 
-# Customer Service Memory Profiling
+# -------------------------
+# Utility Functions
+# -------------------------
+
+def setup_app(app, db_instance):
+    """
+    Configure the Flask app to use SQLite in-memory and initialize the database.
+    """
+    app.config.update({
+        'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
+        'SQLALCHEMY_TRACK_MODIFICATIONS': False,
+        'TESTING': True,
+    })
+    with app.app_context():
+        db_instance.create_all()
+
+
+# -------------------------
+# Profiling Test Functions
+# -------------------------
+
 @profile
-def test_register_customer():
+def test_customer_service():
+    """
+    Tests for the Customer Service endpoints.
+    """
+    customer_app = create_customers_app()
+    setup_app(customer_app, customers_db)
+
     with customer_app.test_client() as client:
-        response = client.post('/customers/register', json={
+        # Test Register
+        client.post('/customers/register', json={
             "full_name": "Memory Test User",
             "username": "memorytestuser",
             "password": "Test123!",
             "age": 30,
             "address": "123 Memory Lane",
             "gender": "Male",
-            "marital_status": "Single"
+            "marital_status": "Single",
         })
-        print(f"Register Customer Response: {response.get_json()}")
+
+        # Test Get All Customers
+        client.get('/customers')
+
+        # Test Delete Customer
+        client.delete('/customers/memorytestuser')
+
 
 @profile
-def test_get_all_customers():
-    with customer_app.test_client() as client:
-        response = client.get('/customers')
-        print(f"Get All Customers Response: {response.get_json()}")
+def test_inventory_service():
+    """
+    Tests for the Inventory Service endpoints.
+    """
+    inventory_app = create_inventory_app()
+    setup_app(inventory_app, inventory_db)
 
-@profile
-def test_get_customer_by_username():
-    with customer_app.test_client() as client:
-        response = client.get('/customers/memorytestuser')
-        print(f"Get Customer by Username Response: {response.get_json()}")
-
-@profile
-def test_update_customer():
-    with customer_app.test_client() as client:
-        response = client.put('/customers/memorytestuser', json={
-            "address": "456 Updated St",
-            "age": 31
-        })
-        print(f"Update Customer Response: {response.get_json()}")
-
-@profile
-def test_delete_customer():
-    with customer_app.test_client() as client:
-        response = client.delete('/customers/memorytestuser')
-        print(f"Delete Customer Response: {response.get_json()}")
-
-@profile
-def test_charge_wallet():
-    with customer_app.test_client() as client:
-        response = client.post('/customers/memorytestuser/charge', json={
-            "amount": 100.0
-        })
-        print(f"Charge Wallet Response: {response.get_json()}")
-
-@profile
-def test_deduct_wallet():
-    with customer_app.test_client() as client:
-        response = client.post('/customers/memorytestuser/deduct', json={
-            "amount": 50.0
-        })
-        print(f"Deduct Wallet Response: {response.get_json()}")
-
-# Inventory Service Memory Profiling
-@profile
-def test_create_product():
     with inventory_app.test_client() as client:
-        response = client.post('/products', json={
+        # Test Create Product
+        client.post('/products', json={
             "name": "Test Product",
             "description": "Performance test product",
             "price": 10.99,
-            "quantity": 5
+            "quantity": 5,
         })
-        print(f"Create Product Response: {response.get_json()}")
+
+        # Test Get All Products
+        client.get('/products')
+
+        # Test Delete Product
+        client.delete('/products/1')
+
 
 @profile
-def test_get_all_products():
-    with inventory_app.test_client() as client:
-        response = client.get('/products')
-        print(f"Get All Products Response: {response.get_json()}")
+def test_sales_service():
+    """
+    Tests for the Sales Service endpoints.
+    """
+    sales_app = create_sales_app()
+    setup_app(sales_app, sales_db)
 
-@profile
-def test_get_product_by_id():
-    with inventory_app.test_client() as client:
-        # Assuming product ID 1 exists for testing purposes
-        response = client.get('/products/1')
-        print(f"Get Product by ID Response: {response.get_json()}")
-
-@profile
-def test_update_product():
-    with inventory_app.test_client() as client:
-        # Assuming product ID 1 exists for testing purposes
-        response = client.put('/products/1', json={
-            "name": "Updated Product",
-            "description": "Updated description",
-            "price": 15.99,
-            "quantity": 10
+    with sales_app.test_client() as client:
+        # Test Create Sale
+        client.post('/sales', json={
+            "product_id": 1,
+            "quantity": 2,
+            "total_price": 49.98,
+            "customer_id": 3,
         })
-        print(f"Update Product Response: {response.get_json()}")
 
-@profile
-def test_delete_product():
-    with inventory_app.test_client() as client:
-        # Assuming product ID 1 exists for testing purposes
-        response = client.delete('/products/1')
-        print(f"Delete Product Response: {response.get_json()}")
+        # Test Get All Sales
+        client.get('/sales')
+
+        # Test Delete Sale
+        client.delete('/sales/1')
+
+
+# -------------------------
+# Performance Profiling
+# -------------------------
+
+def profile_performance():
+    """
+    Run performance profiling with cProfile.
+    """
+    profiler = cProfile.Profile()
+    profiler.enable()
+
+    # Run test functions
+    test_customer_service()
+    test_inventory_service()
+    test_sales_service()
+
+    profiler.disable()
+    stats = Stats(profiler)
+    stats.strip_dirs()
+    stats.sort_stats("cumtime")
+    stats.print_stats()
+
+
+# -------------------------
+# Main Execution
+# -------------------------
 
 if __name__ == "__main__":
-    # Customer Service Tests
-    test_register_customer()
-    test_get_all_customers()
-    test_get_customer_by_username()
-    test_update_customer()
-    test_charge_wallet()
-    test_deduct_wallet()
-    test_delete_customer()
-
-    # Inventory Service Tests
-    test_create_product()
-    test_get_all_products()
-    test_get_product_by_id()
-    test_update_product()
-    test_delete_product()
+    print("Memory and Performance Profiling...")
+    profile_performance()

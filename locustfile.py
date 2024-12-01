@@ -82,3 +82,27 @@ class InventoryServiceUser(HttpUser):
     def get_product_by_id(self):
         # Assuming product ID 1 exists for testing purposes
         self.client.get("/products/1")
+
+
+class SalesServiceUser(HttpUser):
+    wait_time = between(1, 3)  # Simulate a wait time between tasks
+    host = "http://127.0.0.1:5003"
+    @task
+    def create_sale(self):
+        """Simulate creating a sale."""
+        self.client.post("/sales", json={
+            "product_id": 1,
+            "quantity": 2,
+            "total_price": 49.98,
+            "customer_id": 3
+        })
+
+    @task
+    def get_sales(self):
+        """Simulate retrieving all sales."""
+        self.client.get("/sales")
+
+    @task
+    def get_sale_by_id(self):
+        """Simulate retrieving a specific sale by ID."""
+        self.client.get("/sales/1")

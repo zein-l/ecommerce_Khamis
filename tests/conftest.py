@@ -6,6 +6,7 @@ from customers.app.db import db as customers_db
 import os
 import sys
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 @pytest.fixture
 def inventory_client():
