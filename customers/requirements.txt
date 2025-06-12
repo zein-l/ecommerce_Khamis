@@ -1,0 +1,12 @@
+Flask
+Flask_SQLAlchemy
+PyMySQL
+marshmallow
+PyJWT
+Werkzeug
+pytest
+cryptography
+flask-profiler==1.8.1
+memory-profiler
+
+

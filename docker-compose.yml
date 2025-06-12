@@ -1,0 +1,85 @@
+version: "3.8"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: ecommerce-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: ecommerce_db
+      MYSQL_USER: ecommerce_user
+      MYSQL_PASSWORD: securepassword
+    ports:
+      - "3307:3306"
+
+  customers-service:
+    build:
+      context: .
+      dockerfile: ./customers/Dockerfile
+    depends_on:
+      - mysql
+    env_file:
+      - ./customers/.env
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./customers:/app/customers
+      - ./shared:/app/shared
+    command: >
+      sh -c "while ! nc -z mysql 3306; do
+      echo 'Waiting for MySQL...'; sleep 3; done;
+      python app.py"
+
+  inventory-service:
+    build:
+      context: .
+      dockerfile: ./inventory/Dockerfile
+    depends_on:
+      - mysql
+    env_file:
+      - ./inventory/.env
+    ports:
+      - "5002:5002"
+    volumes:
+      - ./inventory:/app/inventory
+      - ./shared:/app/shared
+    command: >
+      sh -c "while ! nc -z mysql 3306; do
+      echo 'Waiting for MySQL...'; sleep 3; done;
+      python app/run.py"
+
+  sales-service:
+    build:
+      context: .
+      dockerfile: ./sales/Dockerfile
+    depends_on:
+      - mysql
+    env_file:
+      - ./sales/.env
+    ports:
+      - "5003:5003"
+    volumes:
+      - ./sales:/app/sales
+      - ./shared:/app/shared
+    command: >
+      sh -c "while ! nc -z mysql 3306; do
+      echo 'Waiting for MySQL...'; sleep 3; done;
+      python app/run.py"
+
+  reviews-service:
+    build:
+      context: .
+      dockerfile: ./reviews/Dockerfile
+    depends_on:
+      - mysql
+    env_file:
+      - ./reviews/.env
+    ports:
+      - "5004:5004"
+    volumes:
+      - ./reviews:/app/reviews
+      - ./shared:/app/shared
+    command: >
+      sh -c "while ! nc -z mysql 3306; do
+      echo 'Waiting for MySQL...'; sleep 3; done;
+      python app/run.py"
